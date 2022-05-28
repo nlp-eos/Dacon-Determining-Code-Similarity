@@ -43,7 +43,13 @@ MAX_LEN = 256
 
 #preprocess_df['tokenized1'] = df.apply(lambda row: tokenizer.to(row['sentences']), axis=1)
 
-def tokenized(data):
-  return tokenizer(data['code1'], data['code2'], padding=True, max_length=MAX_LEN,truncation=True, return_token_type_ids=False)
 
-print(tokenized(preprocess_df[:5]))
+def tokenized(data):
+  return tokenizer(data, padding=True, max_length=MAX_LEN,truncation=True, return_token_type_ids=False)
+#print(preprocess_df.map(tokenized(preprocess_df)))
+
+for (code1,code2) in zip(preprocess_df['code1'], preprocess_df['code2']):
+  preprocess_df['tokenized1'] = df.apply(lambda row: tokenized(code1), axis=1)
+  print(preprocess_df['tokenized1'][1])
+  print(preprocess_df)
+  break
