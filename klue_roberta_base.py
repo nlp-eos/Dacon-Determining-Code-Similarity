@@ -7,6 +7,11 @@ Original file is located at
     https://colab.research.google.com/drive/18QsENuwTOEIoYpR-nT5CR5dv3usUH7WK
 """
 
+#optimization: label_num = 2
+#model: klue/roberta_base
+#learning rate: 1e-5
+#train_test_split=0.1, seed = 100
+
 # Preprocess DATA
 import pandas as pd
 import re
@@ -33,11 +38,11 @@ preprocess_df.to_csv('preprocess.csv')
 
 from transformers import AutoModel, AutoTokenizer, AutoModelForSequenceClassification
 
-model = AutoModelForSequenceClassification.from_pretrained("klue/roberta-base", num_labels=1)
+model = AutoModelForSequenceClassification.from_pretrained("klue/roberta-base", num_labels=2)
 tokenizer = AutoTokenizer.from_pretrained("klue/roberta-base")
 
 batch_size = 32
-epoch_num = 5
+epoch_num = 10
 MAX_LEN = 256
 
 !pip install transformers datasets
@@ -69,7 +74,8 @@ print(encoded_dataset)
 encoded_dataset=encoded_dataset.rename_column(original_column_name='similar',new_column_name='labels')
 print(encoded_dataset)
 
-encoded_dataset = encoded_dataset.train_test_split(0.2)
+from pandas.core.common import random_state
+encoded_dataset = encoded_dataset.train_test_split(0.1,seed=100)
 
 import numpy as np
 from datasets import load_metric
@@ -87,11 +93,11 @@ def compute_metrics(eval_pred):
 metric_name = "accuracy"
 
 args = TrainingArguments("test", save_strategy="epoch",evaluation_strategy="epoch",logging_strategy="epoch", 
-                         learning_rate=2e-5,per_device_train_batch_size=batch_size,
-                        per_device_eval_batch_size=batch_size,num_train_epochs=10,weight_decay=0.01,
+                         learning_rate=1e-5,per_device_train_batch_size=batch_size,
+                        per_device_eval_batch_size=batch_size,num_train_epochs=epoch_num,weight_decay=0.01,
                          do_train=True,do_eval=True,metric_for_best_model=metric_name,load_best_model_at_end=True)
 
-#test 
+#test
 fake_preds = np.random.randint(0, 2, size=(64,))
 fake_labels = np.random.randint(0, 2, size=(64,))
 fake_preds, fake_labels
