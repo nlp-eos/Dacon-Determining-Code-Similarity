@@ -33,6 +33,9 @@ from transformers import DataCollatorWithPadding
 import torch,gc
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+from torch.nn import CrossEntropyLoss
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 #Load Train dataset
 train1 = pd.read_csv('sample_train.csv', encoding = 'utf-8')
@@ -40,8 +43,8 @@ df1 = pd.DataFrame(train1)
 
 #Define Model
 
-pretrained = RobertaModel.from_pretrained("microsoft/codebert-base")
-tokenizer = RobertaTokenizer.from_pretrained("microsoft/codebert-base")
+pretrained = AutoModelForSequenceClassification.from_pretrained("microsoft/codebert-base")
+tokenizer = AutoTokenizer.from_pretrained("microsoft/codebert-base")
 #loss_fn = 
 
 batch_size = 32
@@ -59,48 +62,133 @@ def preprocess(df):
   preprocess_df.to_csv('preprocess.csv')
   
 def tokenized(examples):
-  return tokenizer(examples['code1'],examples['code2'], padding=True, max_length=MAX_LEN,truncation=False, return_token_type_ids=False)
+  return tokenizer(examples['code1'],examples['code2'], padding=True, max_length=MAX_LEN,truncation=True, return_token_type_ids=True)
 
 preprocess(df1)
 dataset = load_dataset("csv",data_files="preprocess.csv")['train']
+#truncation을 하는 대신에 왼쪽부터 자르도록 해야하나?
 encoded_dataset = dataset.map(tokenized,remove_columns=['Unnamed: 0','code1','code2'],batched=True)
 encoded_dataset=encoded_dataset.rename_column(original_column_name='similar',new_column_name='labels')
 encoded_dataset
 print(encoded_dataset[1])
 
+print(tokenizer.tokenize(dataset['code2'][1]))
+
 encoded_dataset = encoded_dataset.train_test_split(0.1,seed=100)
+
+loss_fn = CrossEntropyLoss()#weight?
 
 class CodeBERTModified():
   def __init__(self, my_pretrained_model):
     super(CodeBERTModified,self).__init__()
     self.pretrained = my_pretrained_model
+    self.parameters = self.pretrained.parameters
+    #self.grads = self.pretrained.grads
+    self.cache = None
   
-  def forward(self,input_ids=None):
-    outputs = self.pretrained(input_ids)
-    out = outputs[1]
-    return out
+  def forward(self,input_ids=None,token_type_ids=None,labels=None):
+    outputs = self.pretrained(input_ids, token_type_ids=token_type_ids, labels=labels)
+    print(outputs)
+    out = outputs[1]#의미하는게 뭐지?
+    loss = loss_fn(outputs[1].view(-1,2),labels.view(-1))#여기도 어떻게 돌아가는건지
+    return out,loss
+
+  def backward(self):
+    return 
+
+  def predict(self,input_ids=None,token_type_ids=None,labels=None):
+    return self.forward(input_ids, token_type_ids=token_type_ids, labels=labels)
 
 model = CodeBERTModified(my_pretrained_model=pretrained)
+#model.to(device)
 
-optimizer = torch.optim.Adam(model,lr=learning_rate)
+train_dataset = encoded_dataset['train'][1]
+print(train_dataset)
+
+for step, batch in enumerate(encoded_dataset['train']):
+    label = batch['labels']
+    input_ids = batch['input_ids']
+    token_ids = batch['token_type_ids']
+    
+    #model.zero_grads()
+
+    logits, loss = model.forward(input_ids = np.array(input_ids), token_type_ids = np.array(token_ids), labels=np.array(label))
+    break
+
+optimizer = torch.optim.Adam(model.parameters(),lr=learning_rate)
+
+def flat_accuracy(preds,labels): #이거는 metric accuracy로 대체 가능할듯
+  pred_flat = np.argmax(preds, axis=1).flatten()
+  labels_flat = labels.flatten()
+  return np.sum(pred_flat == labels_flat) / len(labels_flat)
 
 for epoch in range(epoch_num):
+
+  #train
   print("======Epoch%d======",epoch)
-  print("======Traing=======")
+  print("Traing...")
 
   #cuda memory error
   gc.collect()
   torch.cuda.empty_cache()
 
   total_train_loss = 0
-  model.train()
+  #model.train()
 
-  for step, batch in enumerate(encoded_dataset):
-    input1 = batch['code1']
+  for step, batch in enumerate(encoded_dataset['train']):
+    label = batch['labels']
+    input_ids = batch['input_ids']
+    token_ids = batch['token_type_ids']
+    
+    #model.zero_grads()
 
-#data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
+    logits, loss = model.forward(input_ids = input_ids, token_type_ids = token_ids, labels=label)
+    total_train_loss += loss.item()
+    loss.backward()
+    optimizer.step()
 
-'''
+    if step % 50 == 0 and not step == 0:
+      print('step : {:>5,} of {:>5,} loss: {:.5f}'.format(step, len(encoded_dataset['train']), loss.item()))
+
+    avg_train_loss = total_train_loss / len(encoded_dataset['train'])
+    print("")
+    print("  Average training loss: {0:.5f}".format(avg_train_loss))
+
+
+    #validation
+    print("Validation...")
+
+    model.eval()
+    total_eval_accuracy = 0
+    total_eval_loss=0
+
+    for step,batch in enumerate(encoded_dataset['test']):
+      label = batch[0]
+      input_ids = batch[1]
+      token_ids = batch[2]
+
+      with torch.no_grads():
+        logits, loss = model(input_ids = input_ids, token_type_ids = token_ids, labels=label)
+        total_eval_loss += loss.item()
+        logits = logits.detach().cpu().numpy()
+        label_ids = label.to('cpu').numpy()
+        total_eval_accuracy += flat_accuracy(logits, label_ids)
+
+
+      avg_val_accuracy = total_eval_accuracy / len(encoded_dataset['test'])
+      print("Accuracy: {0:.2f}".format(avg_val_accuracy))
+
+data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
+
+metric = load_metric("accuracy")
+
+def compute_metrics(eval_pred):
+  predictions, labels = eval_pred
+  predictions = np.argmax(predictions, axis=1)
+  return metric.compute(predictions=predictions, references=labels)
+
+metric_name = "accuracy"
+
 args = TrainingArguments("test", save_strategy="epoch",evaluation_strategy="epoch",logging_strategy="epoch", 
                          learning_rate=1e-5,per_device_train_batch_size=batch_size,
                         per_device_eval_batch_size=batch_size,num_train_epochs=epoch_num,weight_decay=0.01,
@@ -108,7 +196,6 @@ args = TrainingArguments("test", save_strategy="epoch",evaluation_strategy="epoc
 
 trainer = Trainer(model,args,train_dataset=encoded_dataset['train'],eval_dataset=encoded_dataset['test'],
                   tokenizer=tokenizer, compute_metrics=compute_metrics, data_collator=data_collator)
-'''
 
 #trainer.train()
 
@@ -125,14 +212,3 @@ predictions = trainer.predict(test_dataset)
 df = pd.read_csv(SAMPLE)
 df['similar'] = np.argmax(predictions.predictions,axis=-1)
 df.to_csv('submission.csv',index=False)
-
-'''
-metric = load_metric("glue","qnli")
-
-def compute_metrics(eval_pred):
-  predictions, labels = eval_pred
-  predictions = np.argmax(predictions, axis=1)
-  return metric.compute(predictions=predictions, references=labels)
-
-metric_name = "accuracy"
-'''
