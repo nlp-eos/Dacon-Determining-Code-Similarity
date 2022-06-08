@@ -17,4 +17,5 @@
 ***
 - model: CodeBERT     
  -> codeBERT 경우 ml-pl pair에 대한 모델, pl에 대해서만 embedding -> cosineSimilarity를 통한 sequenceClassfication -> loss -> 학습??
-  1. epoch_num=10, learning_rate=1e-5,train_test_split=0.1, seed=100, optimizer=Adam
+  1. 기존 klue/roberta-base fine-tuning 시키는 모델에서 모델만 바꿈
+    - model: microsoft/codeBERT-base, learning_rate = 1e-5, MAX_LEN = 512, epoch_num = 10, batch_size = 16 ➡️ accuracy: 0.97, private score:0.89
