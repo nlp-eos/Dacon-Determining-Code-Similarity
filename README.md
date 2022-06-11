@@ -20,13 +20,15 @@
 
 ***
 - model: CodeBERT     
- -> codeBERT 경우 ml-pl pair에 대한 모델, pl에 대해서만 embedding -> cosineSimilarity를 통한 sequenceClassfication -> loss -> 학습??
   1. 기존 klue/roberta-base fine-tuning 시키는 모델에서 모델만 바꿈   
    model: microsoft/codeBERT-base, learning_rate = 1e-5, MAX_LEN = 512, epoch_num = 10, batch_size = 16 ➡️ accuracy: 0.97, public score:0.8968280467
   2. 6/8 model: microsoft/codeBERT-base, learning_rate = 1e-5, MAX_LEN = 512, epoch_num = 10, batch_size = 16, optimizer=AdamW(weight_decay=0.0), scheduler = transformers.get_cosine_schedule_with_warmup(optimizer, num_warmup_steps=5, num_training_steps=5), metric=accuarcy ➡️ accuracy: 0.97, public score:0.8627898349
   3. 6/9 model: microsoft/codeBERT-base, learning_rate = 1e-5, MAX_LEN = 512, epoch_num = 10, batch_size = 16, optimizer=AdamW(weight_decay=0.1), scheduler = transformers.get_cosine_schedule_with_warmup(optimizer, num_warmup_steps=5, num_training_steps=5), trainset=new_trainset  ➡️ accuracy: 0.96, public score: 0.9345019477
-  4. 6/10 model: microsoft/codeBERT-base, learning_rate = 1e-5, MAX_LEN = 512, epoch_num = 10, batch_size = 16, optimizer=AdamW(weight_decay=0.1), scheduler = transformers.get_cosine_schedule_with_warmup(optimizer,num_warmup_steps=5, num_training_steps=5), trainset=new_trainset(40000), +preprocess(train_set) ➡️ accuracy: 0.96, pulbic score: 0.9528287887⭐️
+  4. 6/10 model: microsoft/codeBERT-base, learning_rate = 1e-5, MAX_LEN = 512, epoch_num = 10, batch_size = 16, optimizer=AdamW(weight_decay=0.1), scheduler = transformers.get_cosine_schedule_with_warmup(optimizer,num_warmup_steps=5, num_training_steps=5), trainset=new_trainset(40000), +preprocess(train_set) ➡️ accuracy: 0.96, pulbic score: 0.9528287887
+  5. 6/10 model: microsoft/codeBERT-base, learning_rate = 2e-5, MAX_LEN = 512, epoch_num = 7, batch_size = 16, optimizer=AdamW(weight_decay=0.1), scheduler = transformers.get_cosine_schedule_with_warmup(optimizer, num_warmup_steps=5, num_training_steps=5), trainset=new_trainset(45088), +preprocess(train_set) ➡️ accuracy: 0.97, public score: 0.9553515118 ⭐️최종 submission
 
+## 결과
+- private 43/337
 
 ## 개선 방안
 - sentence BERT 사용
