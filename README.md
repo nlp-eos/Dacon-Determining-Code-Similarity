@@ -16,6 +16,7 @@
   2. epoch_num=7, label_num=2, learning_rate=2e-5,train_test_split=0.1, MAX_LEN = 256, batch_size = 16, train_dataset = pretrained model(1.) + 45088(custom) ➡️ accuracy:0.979596, public score: 0.9552958635
 
   📌 MAX_LEN = 512 / batch_size = 32일 경우 RuntimeError: CUDA out of memory
+  -> 하드웨어상 MAX_LEN = 512이 가능해진다면 model_2에서 score가 더 오를 수 있을 듯
 
 ***
 - model: CodeBERT     
