@@ -12,9 +12,8 @@
   -> klue 경우 한국어에 대한 pretrained model 이기 때문에 code와는 맞지 않는다고 판단
 ***
 - model: GraphCodeBERT  
-  📌 default : label_num=2, learning_rate=2e-5,train_test_split=0.1, MAX_LEN = 256, batch_size = 16
-  1. epoch_num=8, train_dataset = 46000(sample_train.csv+custom 27000) ➡️ accuracy:0.975129, public score: 0.9478760898
-  2. epoch_num=7, train_dataset = pretrained model(1.) + 45088(custom) ➡️ accuracy:0.979596, public score: 0.9552958635
+  1. epoch_num=8, label_num=2, learning_rate=2e-5,train_test_split=0.1, MAX_LEN = 256, batch_size = 16, train_dataset = 46000(sample_train.csv+custom 27000) ➡️ accuracy:0.975129, public score: 0.9478760898
+  2. epoch_num=7, label_num=2, learning_rate=2e-5,train_test_split=0.1, MAX_LEN = 256, batch_size = 16, train_dataset = pretrained model(1.) + 45088(custom) ➡️ accuracy:0.979596, public score: 0.9552958635
 
   📌 MAX_LEN = 512 / batch_size = 32일 경우 RuntimeError: CUDA out of memory
 
