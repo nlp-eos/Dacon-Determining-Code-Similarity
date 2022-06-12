@@ -28,7 +28,8 @@
   5. 6/10 model: microsoft/codeBERT-base, learning_rate = 2e-5, MAX_LEN = 512, epoch_num = 7, batch_size = 16, optimizer=AdamW(weight_decay=0.1), scheduler = transformers.get_cosine_schedule_with_warmup(optimizer, num_warmup_steps=5, num_training_steps=5), trainset=new_trainset(45088), +preprocess(train_set) ➡️ accuracy: 0.97, public score: 0.9553515118 ⭐️최종 submission
 
 ## 결과
-- private 43/337
+- private score: 0.95526 (43/337, 13%)
+- code: microsoft-codeBERT/submission8
 
 ## 개선 방안
 - sentence BERT 사용
