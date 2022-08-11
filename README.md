@@ -1,4 +1,9 @@
-# Dacon 2022 코드 유사성 판단 NLP
+# Dacon 2022 코드 유사성 판단 AI 경진대회 
+대회 링크: https://dacon.io/competitions/official/235900/overview/description
+
+## 코드 설명
+https://dacon.io/codeshare/5159
+
 ## hyperparameter
 
 - model: klue/roberta-base
